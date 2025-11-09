@@ -1,7 +1,7 @@
 import HeroSection from "@/components/hero-section";
 import Navbar from "@/components/nav-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -56,16 +56,6 @@ export default function OnBoardingScreen() {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1">
           <Navbar />
-
-          {/* Links */}
-          <View className="px-4 py-2 bg-[#F9F9F9] border-b border-[#E5E5E5]">
-            <Link href="/" className="text-[#495E57] font-semibold py-1">
-              home
-            </Link>
-            <Link href="/profile" className="text-[#495E57] font-semibold py-1">
-              profile
-            </Link>
-          </View>
 
           <HeroSection />
 

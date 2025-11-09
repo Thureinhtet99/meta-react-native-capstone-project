@@ -9,7 +9,7 @@ import HeroSection from "@/components/hero-section";
 import Navbar from "@/components/nav-bar";
 import { initializeDatabase } from "@/db/schema";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Link, Redirect } from "expo-router";
+import { Redirect } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -130,28 +130,6 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1">
       {/* bg-white */}
       <Navbar />
-
-      {/* Links */}
-      <View className="px-4 py-2 bg-[#F9F9F9] border-b border-[#E5E5E5]">
-        <Link
-          href="/edit-customer"
-          className="text-[#495E57] font-semibold py-1"
-        >
-          add customer
-        </Link>
-        <Link
-          href="/account-preference"
-          className="text-[#495E57] font-semibold py-1"
-        >
-          account preference
-        </Link>
-        <Link href="/onboarding" className="text-[#495E57] font-semibold py-1">
-          onboarding
-        </Link>
-        <Link href="/profile" className="text-[#495E57] font-semibold py-1">
-          profile
-        </Link>
-      </View>
 
       <FlatList
         data={menu}

@@ -1,5 +1,6 @@
 import Navbar from "@/components/nav-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
 import React, { useEffect, useState } from "react";
 import {
   Image,
@@ -12,10 +13,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Profile() {
-  const [avatar, setAvatar] = useState(require("../assets/images/Profile.png"));
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [image, setImage] = useState<string | null>(null);
   const [notifications, setNotifications] = useState({
     orderStatus: true,
     password: true,
@@ -40,12 +41,21 @@ export default function Profile() {
     getUserObject();
   }, []);
 
-  const handleAvatarChange = () => {
-    // Implement image picker logic here
+  const handleAvatarChange = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
   };
 
   const handleAvatarRemove = () => {
-    setAvatar("");
+    setImage("");
   };
 
   return (
@@ -63,9 +73,9 @@ export default function Profile() {
             Avatar
           </Text>
           <View className="flex-row items-center mb-6">
-            {avatar ? (
+            {image ? (
               <Image
-                source={avatar}
+                source={{ uri: image }}
                 style={{ width: 80, height: 80 }}
                 resizeMode="cover"
                 className="rounded-full mr-4"
@@ -76,7 +86,7 @@ export default function Profile() {
                 className="bg-[#E5E5E5] mr-4 items-center justify-center rounded-full border-2 border-[#495E57]"
               >
                 <Text className="text-2xl font-bold text-[#495E57]">
-                  {name}
+                  {name[0] + name[1]}
                 </Text>
               </View>
             )}

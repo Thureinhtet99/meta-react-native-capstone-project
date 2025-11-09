@@ -32,7 +32,6 @@ export async function initializeDatabase() {
   try {
     await menuTable();
     await customerTable();
-    console.log("Database tables created successfully");
   } catch (error) {
     console.error("Error initializing database:", error);
     throw error;

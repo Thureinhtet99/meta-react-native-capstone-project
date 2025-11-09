@@ -2,7 +2,7 @@ import { Image, Text, View } from "react-native";
 
 export default function HeroSection() {
   return (
-    <View className="bg-[#495E57] p-4 flex-row items-center mx-4 mt-4 rounded-2xl shadow-lg">
+    <View className="bg-[#495E57] p-4 flex-row items-center mx-4 mt-4 rounded-2xl">
       <View className="flex-1 pr-3">
         <Text className="text-[32px] font-bold text-[#F4CE14]">
           Little Lemon
