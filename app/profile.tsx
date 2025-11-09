@@ -1,8 +1,10 @@
 import Navbar from "@/components/nav-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Alert,
   Image,
   ScrollView,
   Text,
@@ -13,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Profile() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -56,6 +59,33 @@ export default function Profile() {
 
   const handleAvatarRemove = () => {
     setImage("");
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Log Out",
+      "Are you sure you want to log out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Log Out",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem("little-lemon-user");
+              router.replace("/onboarding");
+            } catch (error) {
+              console.error("Error logging out:", error);
+              Alert.alert("Error", "Failed to log out. Please try again.");
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   return (
@@ -169,7 +199,10 @@ export default function Profile() {
             />
           </View>
 
-          <TouchableOpacity className="bg-[#F4CE14] rounded-xl py-4 items-center mb-6 mt-2">
+          <TouchableOpacity
+            className="bg-[#F4CE14] rounded-xl py-4 items-center mb-6 mt-2"
+            onPress={handleLogout}
+          >
             <Text className="text-[#333] font-bold text-lg">Log out</Text>
           </TouchableOpacity>
 
