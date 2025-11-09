@@ -1,5 +1,13 @@
+import {
+  debounce,
+  filterMenuItems,
+  getMenuItemsCount,
+  insertMenuItems,
+  MenuItem,
+} from "@/api/services/menu.service";
 import HeroSection from "@/components/hero-section";
 import Navbar from "@/components/nav-bar";
+import { initializeDatabase } from "@/db/schema";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link, Redirect } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -14,28 +22,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type MenuType = {
-  name?: string;
-  price?: number;
-  description?: string;
-  image?: string;
-  category?: string;
-};
-
-const imageMap: Record<string, any> = {
-  "greekSalad.jpg": require("../assets/images/greekSalad.jpg"),
-  "bruschetta.jpg": require("../assets/images/bruschetta.jpg"),
-  "grilledFish.jpg": require("../assets/images/grilledFish.jpg"),
-  "pasta.jpg": require("../assets/images/pasta.jpg"),
-  "lemonDessert.jpg": require("../assets/images/lemonDessert.jpg"),
-};
-
 export default function HomeScreen() {
-  const [menu, setMenu] = useState<MenuType[]>([]);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<
     boolean | null
   >(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const categories = useMemo(() => {
     return Array.from(new Set(menu.map((item) => item.category))).filter(
@@ -43,21 +37,61 @@ export default function HomeScreen() {
     );
   }, [menu]);
 
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((cat) => cat !== category)
+        : [...prev, category]
+    );
+  };
+
   const getMenuApi = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
-      );
-      const json = await res.json();
-      setMenu(json.menu);
+      // Initialize database tables
+      await initializeDatabase();
+
+      // Check if menu data already exists in the database
+      const menuCount = await getMenuItemsCount();
+
+      if (menuCount === 0) {
+        // Fetch from API if database is empty
+        const res = await fetch(
+          "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
+        );
+        const json = await res.json();
+
+        // Insert menu data into database
+        await insertMenuItems(json.menu);
+      }
+
+      // Load menu from database
+      const results = await filterMenuItems("", []);
+      setMenu(results);
     } catch (error) {
       setLoading(false);
-      console.error(error);
+      console.error("Error loading menu:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  const searchAndFilterMenu = async (searchQuery: string, cats: string[]) => {
+    try {
+      const results = await filterMenuItems(searchQuery, cats);
+      setMenu(results);
+    } catch (error) {
+      console.error("An error occur in filtering menu: ", error);
+    }
+  };
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((searchQuery: string, categories: string[]) => {
+        searchAndFilterMenu(searchQuery, categories);
+      }, 500),
+    []
+  );
 
   const checkOnboardingStatus = async () => {
     try {
@@ -73,6 +107,11 @@ export default function HomeScreen() {
     checkOnboardingStatus();
     getMenuApi();
   }, []);
+
+  // Trigger search when searchQuery or selectedCategories change
+  useEffect(() => {
+    debouncedSearch(searchQuery, selectedCategories);
+  }, [searchQuery, selectedCategories, debouncedSearch]);
 
   // Show loading or redirect while checking onboarding status
   if (hasCompletedOnboarding === null) {
@@ -123,18 +162,20 @@ export default function HomeScreen() {
 
             {/* Search Box */}
             <View className="mx-4 mt-4 mb-4">
-              <View className="flex-row items-center bg-[#F9F9F9] rounded-xl px-4 py-3 border border-[#E5E5E5]">
-                <Text className="text-xl mr-2">🔍</Text>
+              <View className="flex-row items-center bg-[#F9F9F9] rounded-xl px-4 py-1 border border-[#E5E5E5]">
+                <Text className="text-xl py-2 mr-2">🔍</Text>
                 <TextInput
                   placeholder="Search menu..."
                   placeholderTextColor="#999"
                   className="flex-1 text-base bg-transparent"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
                 />
               </View>
             </View>
 
             {/* Order for Delivery */}
-            <View className="py-4">
+            <View className="pt-6">
               <Text className="font-bold text-xl mx-4 mb-3 text-[#495E57]">
                 ORDER FOR DELIVERY!
               </Text>
@@ -145,16 +186,26 @@ export default function HomeScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingHorizontal: 16 }}
-                renderItem={({ item: cat }) => (
-                  <Pressable
-                    key={cat}
-                    className="bg-[#F4CE14] rounded-full px-4 py-2 mr-2"
-                  >
-                    <Text className="font-semibold capitalize text-[#495E57]">
-                      {cat}
-                    </Text>
-                  </Pressable>
-                )}
+                renderItem={({ item }) => {
+                  const category = item as string;
+                  const isSelected = selectedCategories.includes(category);
+                  return (
+                    <Pressable
+                      className={`rounded-full px-4 py-2 mr-2 ${
+                        isSelected ? "bg-[#495E57]" : "bg-[#F4CE14]"
+                      }`}
+                      onPress={() => toggleCategory(category)}
+                    >
+                      <Text
+                        className={`font-semibold capitalize ${
+                          isSelected ? "text-white" : "text-[#495E57]"
+                        }`}
+                      >
+                        {category}
+                      </Text>
+                    </Pressable>
+                  );
+                }}
                 className="mb-4"
               />
             </View>
@@ -192,11 +243,9 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Image
-              source={
-                props.item.image && imageMap[props.item.image]
-                  ? imageMap[props.item.image]
-                  : imageMap["greekSalad.jpg"]
-              }
+              source={{
+                uri: `https://github.com/Meta-Mobile-Developer-PC/Working-With-Data-API/blob/main/images/${props.item.image}?raw=true`,
+              }}
               className="w-24 h-24 rounded-xl"
             />
           </View>
